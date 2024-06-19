@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const dns = require('dns');
+const url = require('url');
 
 const app = express();
 
@@ -39,8 +40,7 @@ const isValidUrl = (urlString) => {
 };
 
 // Function to check DNS validity
-const dnsCheck = (urlString, callback) => {
-  const hostname = new URL(urlString).hostname;
+const dnsCheck = (hostname, callback) => {
   dns.lookup(hostname, (err, addresses) => {
     if (err || !addresses) {
       callback(false);
@@ -59,8 +59,10 @@ app.post('/api/shorturl', (req, res) => {
     return res.json({ error: 'invalid url' });
   }
 
+  const parsedUrl = url.parse(original_url);
+
   // Validate DNS
-  dnsCheck(original_url, (isValid) => {
+  dnsCheck(parsedUrl.hostname, (isValid) => {
     if (!isValid) {
       return res.json({ error: 'invalid url' });
     }
