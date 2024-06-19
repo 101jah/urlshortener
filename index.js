@@ -19,6 +19,51 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 
+
+
+let urls = [];
+let idCounter = 1;
+
+
+// Routes
+app.post('/api/shorturl', (req, res) => {
+  const { original_url } = req.body;
+
+  // Check if the URL is valid
+  try {
+    new URL(original_url);
+  } catch (error) {
+    return res.status(400).json({ error: 'invalid URL' });
+  }
+
+  // Generate short URL
+  const short_url = idCounter++;
+  urls.push({ id: short_url, original_url });
+
+  // Return JSON response with original_url and short_url
+  res.json({ original_url, short_url });
+});
+
+
+
+// GET route for redirection based on short_url
+app.get('/api/shorturl/:short_url', (req, res) => {
+  const { short_url } = req.params;
+
+  // Find the original URL associated with short_url
+  const urlObject = urls.find(url => url.id == short_url);
+
+  // If URL not found, return 404
+  if (!urlObject) {
+    return res.status(404).json({ error: 'short URL not found' });
+  }
+
+  // Redirect to the original URL
+  res.redirect(urlObject.original_url);
+});
+
+
+
 app.listen(port, function() {
   console.log(`Listening on port ${port}`);
 });
