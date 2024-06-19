@@ -10,6 +10,10 @@ app.use(cors());
 
 app.use('/public', express.static(`${process.cwd()}/public`));
 
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+
 app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
@@ -19,13 +23,11 @@ app.get('/api/hello', function(req, res) {
   res.json({ greeting: 'hello API' });
 });
 
-
-
+// Data store for URLs (in-memory for simplicity)
 let urls = [];
 let idCounter = 1;
 
-
-// Routes
+// POST route for creating short URLs
 app.post('/api/shorturl', (req, res) => {
   const { original_url } = req.body;
 
@@ -44,8 +46,6 @@ app.post('/api/shorturl', (req, res) => {
   res.json({ original_url, short_url });
 });
 
-
-
 // GET route for redirection based on short_url
 app.get('/api/shorturl/:short_url', (req, res) => {
   const { short_url } = req.params;
@@ -61,7 +61,6 @@ app.get('/api/shorturl/:short_url', (req, res) => {
   // Redirect to the original URL
   res.redirect(urlObject.original_url);
 });
-
 
 
 app.listen(port, function() {
