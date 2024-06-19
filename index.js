@@ -1,20 +1,20 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
 const bodyParser = require('body-parser');
+const dns = require('dns');
+
+const app = express();
 
 // Basic Configuration
 const port = process.env.PORT || 3000;
 
 app.use(cors());
-
 app.use('/public', express.static(`${process.cwd()}/public`));
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-
+// Serve the index.html file at the root
 app.get('/', function(req, res) {
   res.sendFile(process.cwd() + '/views/index.html');
 });
@@ -28,23 +28,50 @@ app.get('/api/hello', function(req, res) {
 let urls = [];
 let idCounter = 1;
 
+// Function to validate URLs
+const isValidUrl = (urlString) => {
+  try {
+    new URL(urlString);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+// Function to check DNS validity
+const dnsCheck = (urlString, callback) => {
+  const hostname = new URL(urlString).hostname;
+  dns.lookup(hostname, (err, addresses) => {
+    if (err || !addresses) {
+      callback(false);
+    } else {
+      callback(true);
+    }
+  });
+};
+
 // POST route for creating short URLs
 app.post('/api/shorturl', (req, res) => {
   const { original_url } = req.body;
 
-  // Check if the URL is valid
-  try {
-    new URL(original_url);
-  } catch (error) {
-    return res.status(400).json({ error: 'invalid URL' });
+  // Validate URL format
+  if (!isValidUrl(original_url)) {
+    return res.json({ error: 'invalid url' });
   }
 
-  // Generate short URL
-  const short_url = idCounter++;
-  urls.push({ id: short_url, original_url });
+  // Validate DNS
+  dnsCheck(original_url, (isValid) => {
+    if (!isValid) {
+      return res.json({ error: 'invalid url' });
+    }
 
-  // Return JSON response with original_url and short_url
-  res.json({ original_url, short_url });
+    // Generate short URL
+    const short_url = idCounter++;
+    urls.push({ id: short_url, original_url });
+
+    // Return JSON response with original_url and short_url
+    res.json({ original_url, short_url });
+  });
 });
 
 // GET route for redirection based on short_url
@@ -63,7 +90,8 @@ app.get('/api/shorturl/:short_url', (req, res) => {
   res.redirect(urlObject.original_url);
 });
 
-
+// Start the server
 app.listen(port, function() {
   console.log(`Listening on port ${port}`);
 });
+
