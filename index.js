@@ -32,8 +32,8 @@ let idCounter = 1;
 // Function to validate URLs
 const isValidUrl = (urlString) => {
   try {
-    new URL(urlString);
-    return true;
+    const myUrl = new URL(urlString);
+    return myUrl.protocol === "http:" || myUrl.protocol === "https:";
   } catch (error) {
     return false;
   }
@@ -59,7 +59,7 @@ app.post('/api/shorturl', (req, res) => {
     return res.json({ error: 'invalid url' });
   }
 
-  const parsedUrl = url.parse(original_url);
+  const parsedUrl = new URL(original_url);
 
   // Validate DNS
   dnsCheck(parsedUrl.hostname, (isValid) => {
